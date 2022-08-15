@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Service
 @Log4j2
 @RequiredArgsConstructor
-public class NoteServiceImpl implements Noteservice {
+public class NoteServiceImpl implements NoteService {
 
     private final NoteRepository noteRepository;
 
@@ -38,7 +38,7 @@ public class NoteServiceImpl implements Noteservice {
 
         Optional<Note> result = noteRepository.getWithWriter(num);
 
-        if(result.isPresent()){
+        if (result.isPresent()) {
 
             return entityToDTO(result.get());
 
@@ -54,9 +54,9 @@ public class NoteServiceImpl implements Noteservice {
 
         Optional<Note> result = noteRepository.findById(num);
 
-        if(result.isPresent()){
+        if (result.isPresent()) {
 
-            Note note  = result.get();
+            Note note = result.get();
 
             note.changeTitle(noteDTO.getTitle());
             note.changeContent(noteDTO.getContent());
@@ -79,3 +79,4 @@ public class NoteServiceImpl implements Noteservice {
 
         return noteList.stream().map(note -> entityToDTO(note)).collect(Collectors.toList());
     }
+}

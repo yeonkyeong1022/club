@@ -14,6 +14,7 @@ import org.zerock.club.entity.ClubMemberRole;
 import org.zerock.club.repository.ClubMemberRepository;
 import org.zerock.club.security.dto.ClubAuthMemberDTO;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -25,33 +26,48 @@ public class ClubOAuth2UserDetailsService extends DefaultOAuth2UserService {
     private final PasswordEncoder passwordEncoder;
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+
         log.info("--------------------------------------");
-        log.info("userRequest:" + userRequest); //org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest객체
+        log.info("userRequest:" + userRequest);
 
         String clientName = userRequest.getClientRegistration().getClientName();
 
-        log.info("clientName: " + clientName); //Google로 출력
+        log.info("clientName: " + clientName);
         log.info(userRequest.getAdditionalParameters());
 
-        OAuth2User oAuth2User = super.loadUser(userRequest);
+        OAuth2User oAuth2User =  super.loadUser(userRequest);
 
         log.info("==============================");
-
         oAuth2User.getAttributes().forEach((k,v) -> {
-            log.info(k +":" + v); //sub, picture, email, email_verified, EMAIL 등이 출력
+            log.info(k +":" + v);
         });
 
         String email = null;
 
-        if(clientName.equals("Google")){ //구글을 이용하는 경우
+        if(clientName.equals("Google")){
             email = oAuth2User.getAttribute("email");
         }
 
         log.info("EMAIL: " + email);
+//        ClubMember member = saveSocialMember(email); //조금 뒤에 사용
+//
+//        return oAuth2User;
+        ClubMember member = saveSocialMember(email);
 
-        ClubMember member = saveSocialMember(email); //조금 뒤에 사용
+        ClubAuthMemberDTO clubAuthMember = new ClubAuthMemberDTO(
+                member.getEmail(),
+                member.getPassword(),
+                true,   //fromSocial
+                member.getRoleSet().stream().map(
+                                role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                        .collect(Collectors.toList()),
+                oAuth2User.getAttributes()
+        );
+        clubAuthMember.setName(member.getName());
 
-        return oAuth2User;
+
+        return clubAuthMember;
+
     }
 
     private ClubMember saveSocialMember(String email){
@@ -64,6 +80,7 @@ public class ClubOAuth2UserDetailsService extends DefaultOAuth2UserService {
         ClubMember clubMember = ClubMember.builder().email(email)
                 .name(email)
                 .password( passwordEncoder.encode("1111") )
+                .roleSet(new HashSet<ClubMemberRole>())
                 .fromSocial(true)
                 .build();
         clubMember.addMemberRole(ClubMemberRole.USER);

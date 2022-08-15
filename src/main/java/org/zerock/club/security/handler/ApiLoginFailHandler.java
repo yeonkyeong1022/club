@@ -30,3 +30,5 @@ public class ApiLoginFailHandler implements AuthenticationFailureHandler {
 
         PrintWriter out = response.getWriter();
         out.print(json);
+    }
+}
